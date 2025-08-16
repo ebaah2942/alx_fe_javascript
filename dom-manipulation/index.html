@@ -12,7 +12,7 @@
   <div id="quoteDisplay" style="margin: 20px 0; font-size: 1.2em; font-weight: bold;"></div>
   
   <!-- Show random quote button -->
-  <button id="newQuote">Show New Quote</button>
+  <!-- <button id="newQuote">Show New Quote</button> -->
 
   <!-- Add new quote form -->
   <!-- <div style="margin-top: 30px;">
@@ -21,6 +21,15 @@
     <input id="newQuoteCategory" type="text" placeholder="Enter quote category" />
     <button onclick="addQuote()">Add Quote</button>
   </div> -->
+
+<div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+    <button id="newQuote">Show New Quote</button>
+    <button id="exportJson">Export Quotes (JSON)</button>
+    <label style="display:inline-flex; gap:8px; align-items:center;">
+      <span>Import JSON:</span>
+      <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+    </label>
+</div>
 
   <script src="script.js"></script>
 </body>

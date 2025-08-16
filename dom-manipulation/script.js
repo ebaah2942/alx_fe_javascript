@@ -1,4 +1,17 @@
-let quotes = [
+const LS_KEY = "dqg_quotes_v1";
+const SS_LAST_KEY = "dqg_last_quote_v1";
+
+
+
+let quotes = [];
+
+const quoteDisplay = document.getElementById("quoteDisplay");
+const newQuoteBtn = document.getElementById("newQuote");
+const exportBtn = document.getElementById("exportJson");
+
+// Function to load quotes from localStorage
+function getDefaultQuotes() {
+    return [
     {text: "The only limit to our realization of tomorrow is our doubts of today.", category: "inspirational"},
     {text: "Life is 10% what happens to us and 90% how we react to it.", category: "motivational"},
     {text: "The best way to predict the future is to create it.", category: "inspirational"},
@@ -10,27 +23,111 @@ let quotes = [
     {text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", category: "inspirational"},
     {text: "The future belongs to those who believe in the beauty of their dreams.", category: "inspirational" }
 ]
+}
 
+// Load quotes from localStorage or use default quotes
+function loadQuotes() {
+    try {
+        const raw = localStorage.getItem(LS_KEY);
+        if (!raw) {
+            const defaults = getDefaultQuotes();
+            localStorage.setItem(LS_KEY, JSON.stringify(defaults));
+            return defaults;
+        }
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : getDefaultQuotes();
+    }
+    catch (error) {
+        console.error("Error loading quotes from localStorage:", error);
+        return getDefaultQuotes();
+    }
+};
 
-let quoteContainer = document.getElementById("quoteDisplay");
-const displayButton = document.getElementById("newQuote");
-
-// Function to display a random quote
-
-function showRandomQuote(){
-    if (quotes.lenght === 0) {
-        quoteContainer.innerHTML = "No quotes available, please add some quotes.";
-        return;
-    } else{
-        let randomIndex = Math.floor(Math.random() * quotes.length);
-        let randomQuote = quotes[randomIndex].text;
-        let randomCategory = quotes[randomIndex].category;
-
-        quoteContainer.innerHTML = `<p>${randomQuote}</p><p><em>Category: ${randomCategory}</em></p>`;
+// Load quotes into the global variable
+function saveQuotes() {
+    try {
+        localStorage.setItem(LS_KEY, JSON.stringify(quotes));
+    } catch (error) {
+        console.error("Error saving quotes to localStorage:", error);
     }
 }
 
-document.getElementById("newQuote").addEventListener("click", showRandomQuote);
+// session storage helpers
+
+function saveLastViewedQuote(q) {
+    try {
+        sessionStorage.setItem(SS_LAST_KEY, JSON.stringify(q));
+    } catch (error) {
+        console.error("Error saving last quote index to sessionStorage:", error);
+    }
+}
+
+function getLastViewedQuote() {
+    try {
+        const raw = sessionStorage.getItem(SS_LAST_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (error) {
+        console.error("Error retrieving last quote index from sessionStorage:", error);
+        return null;
+    }
+}
+
+// UI: show a quote
+function renderQuote(quote) {
+    if (!quote) {
+        quoteDisplay.innerHTML = "No quotes available, please add some quotes.";
+        return;
+    }
+    quoteDisplay.innerHTML = `<p>${quote.text}</p><p><em>Category: ${quote.category}</em></p>`;
+    saveLastViewedQuote(quote);
+}
+
+
+// Show a random quote
+function showRandomQuote() {
+    if (!quotes.length === 0) return renderQuote(null);
+    const randomIndex = Math.floor(Math.random() * quotes.length);
+    renderQuote(quotes[randomIndex]);
+}
+
+   
+
+
+
+// let quotes = [
+//     {text: "The only limit to our realization of tomorrow is our doubts of today.", category: "inspirational"},
+//     {text: "Life is 10% what happens to us and 90% how we react to it.", category: "motivational"},
+//     {text: "The best way to predict the future is to create it.", category: "inspirational"},
+//     {text: "Success usually comes to those who are too busy to be looking for it.", category: "motivational"},
+//     {text: "You miss 100% of the shots you don’t take.", category: "motivational"},
+//     {text: "Act as if what you do makes a difference. It does.", category: "inspirational"},
+//     {text: "Success is not in what you have, but who you are.", category: "motivational"},
+//     {text: "Believe you can and you're halfway there.", category: "inspirational" },
+//     {text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", category: "inspirational"},
+//     {text: "The future belongs to those who believe in the beauty of their dreams.", category: "inspirational" }
+// ]
+
+
+// let quoteContainer = document.getElementById("quoteDisplay");
+// const displayButton = document.getElementById("newQuote");
+
+
+// Function to display a random quote
+
+// function showRandomQuote(){
+//     if (quotes.lenght === 0) {
+//         quoteContainer.innerHTML = "No quotes available, please add some quotes.";
+//         return;
+//     } else{
+//         let randomIndex = Math.floor(Math.random() * quotes.length);
+//         let randomQuote = quotes[randomIndex].text;
+//         let randomCategory = quotes[randomIndex].category;
+
+//         quoteContainer.innerHTML = `<p>${randomQuote}</p><p><em>Category: ${randomCategory}</em></p>`;
+//     }
+// }
+
+// document.getElementById("newQuote").addEventListener("click", showRandomQuote);
 
 // Create a form to add new quotes
 function createAddQuoteForm() {
@@ -78,11 +175,76 @@ function addQuote() {
 
 }
 
-displayButton.addEventListener("click", showRandomQuote);
+
+// ===== Export JSON =====
+function exportToJson() {
+  const dataStr = JSON.stringify(quotes, null, 2);
+  const blob = new Blob([dataStr], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+
+  const ts = new Date();
+  const name = `quotes-${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, "0")}-${String(ts.getDate()).padStart(2, "0")}T${String(ts.getHours()).padStart(2, "0")}${String(ts.getMinutes()).padStart(2, "0")}${String(ts.getSeconds()).padStart(2, "0")}.json`;
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ===== Import JSON (via <input type="file" onchange="importFromJsonFile(event)">) =====
+function importFromJsonFile(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+
+      if (!Array.isArray(imported)) throw new Error("JSON is not an array.");
+      // basic validation of items
+      const cleaned = imported.filter(
+        (q) => q && typeof q.text === "string" && typeof q.category === "string" && q.text.trim() && q.category.trim()
+      );
+
+      if (!cleaned.length) throw new Error("No valid quotes found in file.");
+
+      quotes.push(...cleaned);
+      saveQuotes();
+      alert("Quotes imported successfully!");
+    } catch (err) {
+      alert(`Import failed: ${err.message || "Invalid JSON"}`);
+    } finally {
+      // reset input so same file can be chosen again if needed
+      event.target.value = "";
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ===== Init =====
+(function init() {
+  quotes = loadQuotes();
+
+  newQuoteBtn.addEventListener("click", showRandomQuote);
+  exportBtn.addEventListener("click", exportToJson);
+
+  createAddQuoteForm();
+
+  // Try to show last viewed quote (session-only), else random
+  const last = getLastViewedQuote();
+  if (last) renderQuote(last);
+  else showRandomQuote();
+})();
+
+// displayButton.addEventListener("click", showRandomQuote);
 
 // Initial display of a quote
-showRandomQuote();
+// showRandomQuote();
 
 // Create the add quote form
-createAddQuoteForm();
+// createAddQuoteForm();
 
