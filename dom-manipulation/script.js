@@ -1,5 +1,6 @@
 const LS_KEY = "dqg_quotes_v1";
 const SS_LAST_KEY = "dqg_last_quote_v1";
+const LS_FILTER_KEY = "dqg_last_filter_v1";
 
 
 
@@ -8,6 +9,9 @@ let quotes = [];
 const quoteDisplay = document.getElementById("quoteDisplay");
 const newQuoteBtn = document.getElementById("newQuote");
 const exportBtn = document.getElementById("exportJson");
+const categoryFilter = document.getElementById("categoryFilter");
+
+  
 
 // Function to load quotes from localStorage
 function getDefaultQuotes() {
@@ -72,6 +76,29 @@ function getLastViewedQuote() {
     }
 }
 
+// ===== Populate Categories =====
+function populateCategories() {
+    const categoryFilter = document.getElementById("categoryFilter");
+  // Clear existing options except "all"
+  categoryFilter.innerHTML = `<option value="all">All Categories</option>`;
+  
+  const uniqueCategories = [...new Set(quotes.map(q => q.category))];
+  uniqueCategories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    categoryFilter.appendChild(option);
+
+        // Restore last selected filter
+  const savedFilter = localStorage.getItem(LS_FILTER_KEY);
+  if (savedFilter) {
+    categoryFilter.value = savedFilter;
+  }
+
+  })};
+
+
+
 // UI: show a quote
 function renderQuote(quote) {
     if (!quote) {
@@ -83,51 +110,32 @@ function renderQuote(quote) {
 }
 
 
-// Show a random quote
+
+// ===== Show Random Quote (with filter) =====
 function showRandomQuote() {
-    if (!quotes.length === 0) return renderQuote(null);
-    const randomIndex = Math.floor(Math.random() * quotes.length);
-    renderQuote(quotes[randomIndex]);
+  const selectedCategory = categoryFilter.value;
+  let filtered = quotes;
+
+  if (selectedCategory !== "all") {
+    filtered = quotes.filter(q => q.category === selectedCategory);
+  }
+
+  if (!filtered.length) {
+    renderQuote(null);
+    return;
+  }
+
+  const randomIndex = Math.floor(Math.random() * filtered.length);
+  renderQuote(filtered[randomIndex]);
 }
 
-   
+// ===== Filtering =====
+function filterQuotes() {
+  const selectedCategory = categoryFilter.value;
+  localStorage.setItem(LS_FILTER_KEY, selectedCategory);
+  showRandomQuote();
+}
 
-
-
-// let quotes = [
-//     {text: "The only limit to our realization of tomorrow is our doubts of today.", category: "inspirational"},
-//     {text: "Life is 10% what happens to us and 90% how we react to it.", category: "motivational"},
-//     {text: "The best way to predict the future is to create it.", category: "inspirational"},
-//     {text: "Success usually comes to those who are too busy to be looking for it.", category: "motivational"},
-//     {text: "You miss 100% of the shots you don’t take.", category: "motivational"},
-//     {text: "Act as if what you do makes a difference. It does.", category: "inspirational"},
-//     {text: "Success is not in what you have, but who you are.", category: "motivational"},
-//     {text: "Believe you can and you're halfway there.", category: "inspirational" },
-//     {text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", category: "inspirational"},
-//     {text: "The future belongs to those who believe in the beauty of their dreams.", category: "inspirational" }
-// ]
-
-
-// let quoteContainer = document.getElementById("quoteDisplay");
-// const displayButton = document.getElementById("newQuote");
-
-
-// Function to display a random quote
-
-// function showRandomQuote(){
-//     if (quotes.lenght === 0) {
-//         quoteContainer.innerHTML = "No quotes available, please add some quotes.";
-//         return;
-//     } else{
-//         let randomIndex = Math.floor(Math.random() * quotes.length);
-//         let randomQuote = quotes[randomIndex].text;
-//         let randomCategory = quotes[randomIndex].category;
-
-//         quoteContainer.innerHTML = `<p>${randomQuote}</p><p><em>Category: ${randomCategory}</em></p>`;
-//     }
-// }
-
-// document.getElementById("newQuote").addEventListener("click", showRandomQuote);
 
 // Create a form to add new quotes
 function createAddQuoteForm() {
@@ -233,6 +241,7 @@ function importFromJsonFile(event) {
   exportBtn.addEventListener("click", exportToJson);
 
   createAddQuoteForm();
+  populateCategories();
 
   // Try to show last viewed quote (session-only), else random
   const last = getLastViewedQuote();
@@ -240,11 +249,8 @@ function importFromJsonFile(event) {
   else showRandomQuote();
 })();
 
-// displayButton.addEventListener("click", showRandomQuote);
 
-// Initial display of a quote
-// showRandomQuote();
 
-// Create the add quote form
-// createAddQuoteForm();
+
+
 
