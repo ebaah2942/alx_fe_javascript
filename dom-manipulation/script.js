@@ -110,7 +110,6 @@ function renderQuote(quote) {
 }
 
 
-
 // ===== Show Random Quote (with filter) =====
 function showRandomQuote() {
   const selectedCategory = categoryFilter.value;
@@ -233,21 +232,68 @@ function importFromJsonFile(event) {
   reader.readAsText(file);
 }
 
+// ===== Server Sync Simulation =====
+async function fetchFromServer() {
+  try {
+    const res = await fetch("https://jsonplaceholder.typicode.com/posts?_limit=5");
+    const posts = await res.json();
+
+    // Map posts into {text, category}
+    const serverQuotes = posts.map(p => ({
+      text: p.title,
+      category: p.body.slice(0, 20) // shorten body into pseudo-category
+    }));
+
+    // Conflict resolution: server wins
+    quotes = [...quotes, ...serverQuotes];
+    // Remove duplicates by text
+    quotes = quotes.filter((q, idx, arr) =>
+      arr.findIndex(other => other.text === q.text) === idx
+    );
+
+    saveQuotes();
+    populateCategories();
+    console.log("Synced with server:", serverQuotes.length, "new quotes");
+  } catch (err) {
+    console.error("Server sync failed:", err);
+  }
+}
+
+// Periodic sync every 60 seconds
+setInterval(fetchFromServer, 60000);
+
 // ===== Init =====
 (function init() {
   quotes = loadQuotes();
-
   newQuoteBtn.addEventListener("click", showRandomQuote);
   exportBtn.addEventListener("click", exportToJson);
-
   createAddQuoteForm();
   populateCategories();
 
-  // Try to show last viewed quote (session-only), else random
   const last = getLastViewedQuote();
   if (last) renderQuote(last);
   else showRandomQuote();
+
+  // initial sync
+  fetchFromServer();
 })();
+
+// ===== Init =====
+// (function init() {
+//   quotes = loadQuotes();
+
+//   newQuoteBtn.addEventListener("click", showRandomQuote);
+//   exportBtn.addEventListener("click", exportToJson);
+
+//   createAddQuoteForm();
+//   populateCategories();
+  
+
+//   // Try to show last viewed quote (session-only), else random
+//   const last = getLastViewedQuote();
+//   if (last) renderQuote(last);
+//   else showRandomQuote();
+// })();
 
 
 
