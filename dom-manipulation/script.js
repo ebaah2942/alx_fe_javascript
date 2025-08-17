@@ -296,7 +296,7 @@ async function syncQuotes() {
 
   localStorage.setItem("quotes", JSON.stringify(mergedQuotes));
   console.log("Quotes synced:", mergedQuotes);
-  notifyUser("Quotes synced with server. Conflicts resolved (server data kept).");
+  notifyUser("Quotes synced with server!");
 
 }
 
