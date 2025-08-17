@@ -233,7 +233,7 @@ function importFromJsonFile(event) {
 }
 
 // ===== Server Sync Simulation =====
-async function fetchFromServer() {
+async function fetchQuotesFromServer() {
   try {
     const res = await fetch("https://jsonplaceholder.typicode.com/posts?_limit=5");
     const posts = await res.json();
@@ -260,7 +260,7 @@ async function fetchFromServer() {
 }
 
 // Periodic sync every 60 seconds
-setInterval(fetchFromServer, 60000);
+setInterval(fetchQuotesFromServer, 60000);
 
 // ===== Init =====
 (function init() {
@@ -275,7 +275,7 @@ setInterval(fetchFromServer, 60000);
   else showRandomQuote();
 
   // initial sync
-  fetchFromServer();
+  fetchQuotesFromServer();
 })();
 
 // ===== Init =====
